@@ -27,12 +27,13 @@ import { unshieldedToken } from '@midnight-ntwrk/ledger-v7';
 import { generateRandomSeed } from '@midnight-ntwrk/wallet-sdk-hd';
 
 // Shared utilities from the utils.ts file
-import { 
-  createWallet, 
-  createProviders, 
-  compiledContract, 
-  zkConfigPath 
+import {
+  createWallet,
+  createProviders,
+  compiledContract,
+  zkConfigPath
 } from './utils.js';
+import { FacadeState } from '@midnight-ntwrk/wallet-sdk-facade';
 
 // ─── Main Deploy Script ────────────────────────────────────────────────────────
 
@@ -70,20 +71,20 @@ async function main() {
     const walletCtx = await createWallet(seed);
 
     console.log('  Syncing with network...');
-    const state = await Rx.firstValueFrom(
+    const state: FacadeState = await Rx.firstValueFrom(
       walletCtx.wallet.state().pipe(
-        Rx.throttleTime(5000), 
-        Rx.filter((s) => s.isSynced)
+        Rx.throttleTime(5000),
+        Rx.filter((s: FacadeState) => s.isSynced)
       )
     );
-    
+
     const address = walletCtx.unshieldedKeystore.getBech32Address();
     const balance = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
 
     console.log(`\n  Wallet Address: ${address}`);
     console.log(`  Balance: ${balance.toLocaleString()} tNight\n`);
 
-        // 2. Fund wallet if needed
+    // 2. Fund wallet if needed
     if (balance === 0n) {
       console.log('─── Step 2: Fund Your Wallet ───────────────────────────────────\n');
       console.log('  Visit: https://faucet.preprod.midnight.network/');
@@ -93,8 +94,8 @@ async function main() {
       await Rx.firstValueFrom(
         walletCtx.wallet.state().pipe(
           Rx.throttleTime(10000),
-          Rx.filter((s) => s.isSynced),
-          Rx.map((s) => s.unshielded.balances[unshieldedToken().raw] ?? 0n),
+          Rx.filter((s: FacadeState) => s.isSynced),
+          Rx.map((s: FacadeState) => (s.unshielded.balances[unshieldedToken().raw] ?? 0n) as bigint),
           Rx.filter((b) => b > 0n),
         ),
       );
@@ -104,14 +105,14 @@ async function main() {
     // 3. Register for DUST
     console.log('─── Step 3: DUST Token Setup ───────────────────────────────────\n');
     const dustState = await Rx.firstValueFrom(
-      walletCtx.wallet.state().pipe(Rx.filter((s) => s.isSynced))
+      walletCtx.wallet.state().pipe(Rx.filter((s: FacadeState) => s.isSynced))
     );
 
-    if (dustState.dust.walletBalance(new Date()) === 0n) {
+    if (dustState.dust.balance(new Date()) === 0n) {
       const nightUtxos = dustState.unshielded.availableCoins.filter(
-        (c: any) => !c.meta?.registeredForDustGeneration
+        (c) => !c.meta?.registeredForDustGeneration
       );
-      
+
       if (nightUtxos.length > 0) {
         console.log('  Registering for DUST generation...');
         const recipe = await walletCtx.wallet.registerNightUtxosForDustGeneration(
@@ -129,13 +130,13 @@ async function main() {
         walletCtx.wallet.state().pipe(
           Rx.throttleTime(5000),
           Rx.filter((s) => s.isSynced),
-          Rx.filter((s) => s.dust.walletBalance(new Date()) > 0n)
+          Rx.filter((s) => s.dust.balance(new Date()) > 0n)
         ),
       );
     }
     console.log('  DUST tokens ready!\n');
 
-        // 4. Deploy contract
+    // 4. Deploy contract
     console.log('─── Step 4: Deploy Contract ────────────────────────────────────\n');
     console.log('  Setting up providers...');
     const providers = await createProviders(walletCtx);

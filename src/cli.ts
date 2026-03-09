@@ -82,7 +82,7 @@ async function main() {
         await Rx.firstValueFrom(
           walletCtx.wallet.state().pipe(Rx.filter((s) => s.isSynced))
         )
-      ).dust.walletBalance(new Date());
+      ).dust.balance(new Date());
 
       console.log('─────────────────────────────────────────────────────────────────');
       console.log(`  DUST: ${dust.toLocaleString()}`);
