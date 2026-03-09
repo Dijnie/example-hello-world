@@ -32,6 +32,7 @@ import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
 import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
 import { createKeystore, InMemoryTransactionHistoryStorage, PublicKey, UnshieldedWallet } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import { mnemonicToSeedSync } from '@scure/bip39';
 import type { Contract as HelloWorldContract, ImpureCircuits } from '../contracts/managed/hello-world/contract/index.js';
 
 // Circuit ID type derived from the compiled contract
@@ -49,7 +50,7 @@ export const CONFIG = {
   indexer: 'https://indexer.preprod.midnight.network/api/v3/graphql',
   indexerWS: 'wss://indexer.preprod.midnight.network/api/v3/graphql/ws',
   node: 'https://rpc.preprod.midnight.network',
-  proofServer: 'http://127.0.0.1:6300',
+  proofServer: 'https://proof.nocturne.cash/',
 };
 
 // Path configuration
@@ -66,6 +67,12 @@ export const compiledContract = CompiledContract.make<HelloWorldContract>('hello
 );
 
 // ─── Wallet Functions ──────────────────────────────────────────────────────────
+
+// Convert a BIP39 mnemonic phrase to a hex seed string
+export function seedFromMnemonic(mnemonic: string, passphrase?: string): string {
+  const seedBuffer = mnemonicToSeedSync(mnemonic, passphrase);
+  return Buffer.from(seedBuffer).toString('hex');
+}
 
 export function deriveKeys(seed: string) {
   const hdWallet = HDWallet.fromSeed(Buffer.from(seed, 'hex'));

@@ -2,3 +2,5 @@
 /contracts
 deployment.json
 /midnight-level-db
+.yarn
+.env

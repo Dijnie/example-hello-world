@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dotenv/config';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import * as fs from 'node:fs';
@@ -31,7 +32,8 @@ import {
   createWallet,
   createProviders,
   compiledContract,
-  zkConfigPath
+  zkConfigPath,
+  seedFromMnemonic,
 } from './utils.js';
 import { FacadeState } from '@midnight-ntwrk/wallet-sdk-facade';
 
@@ -53,18 +55,27 @@ async function main() {
   try {
     // 1. Wallet setup
     console.log('─── Step 1: Wallet Setup ───────────────────────────────────────\n');
-    const choice = await rl.question(
-      '  [1] Create new wallet\n  [2] Restore from seed\n  > '
-    );
 
-    const seed = choice.trim() === '2'
-      ? await rl.question('\n  Enter your 64-character seed: ')
-      : toHex(Buffer.from(generateRandomSeed()));
+    let seed: string;
+    const envMnemonic = process.env.MNEMONIC?.trim();
 
-    if (choice.trim() !== '2') {
-      console.log(
-        `\n  ⚠️  SAVE THIS SEED (you'll need it later):\n  ${seed}\n`
+    if (envMnemonic) {
+      console.log('  Using MNEMONIC from .env\n');
+      seed = seedFromMnemonic(envMnemonic);
+    } else {
+      const choice = await rl.question(
+        '  [1] Create new wallet\n  [2] Restore from seed\n  > '
       );
+
+      seed = choice.trim() === '2'
+        ? await rl.question('\n  Enter your 64-character seed: ')
+        : toHex(Buffer.from(generateRandomSeed()));
+
+      if (choice.trim() !== '2') {
+        console.log(
+          `\n  ⚠️  SAVE THIS SEED (you'll need it later):\n  ${seed}\n`
+        );
+      }
     }
 
     console.log('  Creating wallet...');
@@ -134,7 +145,7 @@ async function main() {
         ),
       );
     }
-    console.log('  DUST tokens ready!\n');
+    console.log(`  DUST tokens ready! Balance: ${state.dust.balance(new Date()) / 10n ** 6n}\n`);
 
     // 4. Deploy contract
     console.log('─── Step 4: Deploy Contract ────────────────────────────────────\n');

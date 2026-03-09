@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dotenv/config';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import * as fs from 'node:fs';
@@ -22,11 +23,12 @@ import * as Rx from 'rxjs';
 import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 
 // Shared utilities from the utils.ts file
-import { 
-  createWallet, 
-  createProviders, 
-  compiledContract, 
-  HelloWorld 
+import {
+  createWallet,
+  createProviders,
+  compiledContract,
+  HelloWorld,
+  seedFromMnemonic,
 } from './utils.js';
 
 // ─── Main CLI Script ───────────────────────────────────────────────────────────
@@ -48,8 +50,11 @@ async function main() {
   const rl = createInterface({ input: stdin, output: stdout });
 
   try {
-    // Get wallet seed
-    const seed = await rl.question('  Enter your wallet seed: ');
+    // Get wallet seed from .env mnemonic or interactive prompt
+    const envMnemonic = process.env.MNEMONIC?.trim();
+    const seed = envMnemonic
+      ? (console.log('  Using MNEMONIC from .env\n'), seedFromMnemonic(envMnemonic))
+      : await rl.question('  Enter your wallet seed: ');
 
     console.log('\n  Connecting to Midnight Preprod...');
     const walletCtx = await createWallet(seed.trim());
