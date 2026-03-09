@@ -219,7 +219,7 @@ export async function createProviders(
     privateStateProvider: levelPrivateStateProvider({
       privateStateStoreName: 'hello-world-state',
       accountId: 'hello-world',
-      privateStoragePasswordProvider: async () => 'midnight-hello-world-default-password',
+      privateStoragePasswordProvider: async () => 'Midnight-hello-world-default-password-1',
     }),
     publicDataProvider: indexerPublicDataProvider(
       CONFIG.indexer,
